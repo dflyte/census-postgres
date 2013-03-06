@@ -27,7 +27,7 @@ psql acs2011_5yr -f store_by_tables.sql
 psql acs2011_5yr -f insert_into_tables.sql
 psql acs2011_5yr -f view_estimate_stored_by_tables.sql
 psql acs2011_5yr -f view_moe_stored_by_tables.sql
-\# then, only run the following if everything is loaded correctly:
+# then, only run the following if everything is loaded correctly:
 psql acs2011_5yr -f drop_tmp_tables.sql
 ```
 
