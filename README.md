@@ -1,3 +1,40 @@
+# README
+
+This has been forked from leehach/census-postgres and modified to suit my purposes. (I only wanted to load the data from the "Tracts_Block_Groups_Only" file for the ACS 2011 5-year.)
+
+This worked for me, but I can't guarantee success as I haven't tested it much outside of that so please consider it alpha quality.
+
+I changed the import scripts for the ACS 2011 5-year dataset (acs2011_5yr/import_geoheader.sql and acs2011_5yr/import_sequences.sql) to only load the data for "Tracts_Block_Groups_Only" data. I also added acs2011_5yr/drop_tmp_tables.sql to clean up all the temporary tables once the import is done.
+
+These modified scripts expect a folder called acs2011_5yr/Tracts_Block_Groups_Only which should contain all the *.txt files found in 2011_ACS_Geography_Files.zip and Tracts_Block_Groups_Only.tar.gz available from:
+
+```
+ftp://ftp2.census.gov/acs2011_5yr/summaryfile/2007-2011_ACSSF_All_In_2_Giant_Files(Experienced-Users-Only)/
+```
+
+After moving the necessary data to acs2011_5yr/Tracts_Block_Groups_Only then you can run the following commands from the acs2011_5yr/ directory to load the data into a new PostgreSQL database called acs2011_5yr. Be forewarned that this takes quite a bit of time and disk space.
+
+```
+createdb acs2011_5yr
+psql acs2011_5yr -f create_tmp_geoheader.sql
+psql acs2011_5yr -f create_import_tables.sql
+psql acs2011_5yr -f import_geoheader.sql
+psql acs2011_5yr -f import_sequences.sql
+psql acs2011_5yr -f create_geoheader.sql
+psql acs2011_5yr -f geoheader_comments.sql
+psql acs2011_5yr -f parse_tmp_geoheader.sql
+psql acs2011_5yr -f store_by_tables.sql
+psql acs2011_5yr -f insert_into_tables.sql
+psql acs2011_5yr -f view_estimate_stored_by_tables.sql
+psql acs2011_5yr -f view_moe_stored_by_tables.sql
+\# then, only run the following if everything is loaded correctly:
+psql acs2011_5yr -f drop_tmp_tables.sql
+```
+
+Now everything is loaded and queryable, but it's still pretty opaque due to the oblique conventions of the ACS. You'll need to refer to the ACS_2007_2011_SF_Tech_Doc.pdf and Sequence_Number_and_Table_Number_Lookup.txt to figure out what's where. Good luck!
+
+The original README follows below.
+
 # Overview
 
 This project consists of a number of SQL scripts and other supporting files for importing some recent US Census datasets into a PostgreSQL database. The datasets of interest are the Decennial Census and the annual American Community Survey (ACS). There are two types of scripts:
@@ -25,7 +62,7 @@ Each data product (e.g. American Community Survey 2006-2010) can be thought of a
 
 The data scripts should be run in a specific order. They will generate storage tables, staging (temp) tables, and views which mirror Census "subject tables", as well as actually doing the data import.
 
-*Table and view names in these scripts are* ***not*** *schema-qualified,* allowing the data manager to choose their own schema name. As mentioned above, I use a schema name based on folder names from the Census Bureau FTP server. Assuming you do the same, each script needs to prepended with 
+*Table and view names in these scripts are* ***not*** *schema-qualified,* allowing the data manager to choose their own schema name. As mentioned above, I use a schema name based on folder names from the Census Bureau FTP server. Assuming you do the same, each script needs to prepended with
 
     SET search_path = acs2010_5yr, public; --or other appropriate schema name
 
@@ -49,7 +86,7 @@ These scripts use COPY statements to do the actual data import, albeit to stagin
 
 These scripts use forward slashes to represent filesystem separators. Testing on Windows Vista indicates that forward slashes will be interpreted correctly. Backslashes, if used, are treated as escape characters and would need to be doubled.
 
-These scripts contain a filesystem placeholder "<census_upload_root>". This placeholder should be updated to reflect your filesystem. This folder should have a child named acs2010_5yr. The acs2010_5yr folder should have two children. As mentioned above, the files downloaded from Census should be in two sibling directories named All_Geographies_Not_Tracts_Block_Groups and Tracts_Block_Groups_Only. 
+These scripts contain a filesystem placeholder "<census_upload_root>". This placeholder should be updated to reflect your filesystem. This folder should have a child named acs2010_5yr. The acs2010_5yr folder should have two children. As mentioned above, the files downloaded from Census should be in two sibling directories named All_Geographies_Not_Tracts_Block_Groups and Tracts_Block_Groups_Only.
 
 The geoheader files use a fixed-length format, and are therefore imported to a table with a single column. This column is then parsed for insertion the the final geoheader table. The geoheader files contain *all* geographies, in spite of whether they are downloaded with the larger or smaller (tracts and block groups only) datasets. These scripts assume the existence of the All_Geographies_Not_Tracts_Block_Groups folder. If you have only downloaded the tracts and block groups, you will have to modify the script or create the expected folder and move the geography files (g20105xx.txt).
 
@@ -115,20 +152,3 @@ The data are most interesting when mapped. These data can be joined with geograp
 For comments, or if you are interested in assisting, please feel free to contact me at Lee.Hachadoorian@gmail.com
 
 These scripts are released under the GNU General Public License.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
